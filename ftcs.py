@@ -37,3 +37,12 @@ def exact_solution(t, x) :
     return 3./8 + sigma(sigma_to, lambda l: (pow(-1, l)/(pi * (2*l+1)) + 2/(pi**2 * (2*l + 1)**2 ))*cos(pi*(2*l+1)*x)*exp(-pi**2*(2*l+1)**2*t)) + \
            sigma(sigma_to, lambda m: cos(2*pi*(2*m + 1)*x) / (pi**2*(2*m+1)**2 ) * exp(-4* pi**2 *(2*m+1)**2*t))
 
+
+for t in np.arange(10.)/10:
+    print exact_solution(t, -1)
+
+xx = np.arange(2000.)/1000 - 1
+print xx
+
+plt.plot( np.vectorize(exact_solution)(0.5, xx))
+plt.show()
