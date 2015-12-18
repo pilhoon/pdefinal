@@ -40,7 +40,6 @@ def exact_sol_view() :
     plt.show()
 
 
-#main
 
 #
 # initialize global variables.
