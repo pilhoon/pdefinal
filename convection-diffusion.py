@@ -22,25 +22,32 @@ parser.add_argument('--show', action='store_true', help='show error graph')
 parser.add_argument('--tmax', type=int, default=10)
 parser.add_argument('--xmin', type=int, default=-10)
 parser.add_argument('--xmax', type=int, default=10)
+parser.add_argument('--ymin', type=int, default=-10)
+parser.add_argument('--ymax', type=int, default=10)
+parser.add_argument('--solution', action='store_true')
 args = parser.parse_args()
 
-dx = 1./args.h
-x_coords = np.linspace(args.xmin, args.xmax, 2./dx + 1)
-dt = 1./args.k
-t_coords = np.linspace(0, args.tmax, 1./dt + 1)
+assert args.xmax > args.xmin 
+
+dx = 1.*(args.xmax - args.xmin)/args.h
+x_coords = np.linspace(args.xmin, args.xmax, args.h + 1)
+dt = 1.*args.tmax/args.k
+t_coords = np.linspace(0, args.tmax, args.k + 1)
 a = args.a
 b = args.b
 c = args.c
 # mu = dt / (dx*dx)
 # lmbda = dt / dx
 
+print '---------------------'
 print ' a = ', a
 print ' b = ', b
 print ' c = ', c
 print ' dx = ', dx, '(h = ', args.h, ')'
 print ' dt = ', dt, '(k = ', args.k, ')'
-print ' tmax = ', args.tmax
-print ' 2b/hc = ', (2*b)/(dx*c)
+print ' t = 0 ~', args.tmax, '(len = ', len(t_coords), ')'
+print ' x = ', args.xmin, '~', args.xmax, '(len = ', len(x_coords), ')'
+print ' dx*c/2b = ', (dx*c)/(2*b)
 
 def exact_solution(t, x, a, b, c): #x : array
     k = np.multiply(1.*c/(2*b), np.subtract(x, a*t))
@@ -84,7 +91,7 @@ def get_error(type=args.type):
         norm = linalg.norm(err_arr)
         err += [norm]
         if norm> 20:
-            print ' * oscillation at ', idx , '/', len(t_coords)-1
+            print ' \033[31mdiverge at ', idx , '/', len(t_coords)-1, '\033[0m'
             break;
     print ' error avg = ', np.average(err)
     print '       std = ', np.std(err)
@@ -95,17 +102,6 @@ def get_error(type=args.type):
 #
 # exact solution view
 #
-#fig, ax = plt.subplots()
-#y= exact_solution(0, x_coords, a, b, c)
-#line, = ax.plot(x_coords,y)
-##plt.plot(x_coords, exact_solution(0.5, x_coords, 1,1,1))
-#def update(t):
-#    print t
-#    line.set_ydata(exact_solution(t, x_coords, a, b, c))
-#    return line
-#    
-#ani = ani.FuncAnimation(fig, update, t_coords, interval=1, repeat=False)
-#plt.show()
 
 if args.animate :
     #
@@ -113,11 +109,13 @@ if args.animate :
     #
     print ' interval = ', args.interval , ' ms'
     fig, ax = plt.subplots()
+    ax.set_xlim([args.xmin, args.xmax])
+    ax.set_ylim([args.ymin, args.ymax])
     y = exact_solution(0, x_coords, a, b, c)
     line, = ax.plot(x_coords,y)
     ##plt.plot(x_coords, exact_solution(0.5, x_coords, 1,1,1))
     def update(t):
-        print '\r t = %.2f'% t,
+        print '\r @t = %.2f'% t,
         sys.stdout.flush()
         global y
         y = ftcs2_step(y)
@@ -125,6 +123,20 @@ if args.animate :
         return line
 
     ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval , repeat=False)
+    plt.show()
+elif args.solution:
+    fig, ax = plt.subplots()
+    ax.set_xlim([args.xmin, args.xmax])
+    ax.set_ylim([args.ymin, args.ymax])
+    y = exact_solution(0, x_coords, a, b, c)
+    line, = ax.plot(x_coords,y)
+    def update(t):
+        print '\r @t = %.2f'% t,
+        sys.stdout.flush()
+        line.set_ydata(exact_solution(t, x_coords, a, b, c))
+        return line
+        
+    ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval, repeat=False)
     plt.show()
 else : #error view
     err = get_error()
