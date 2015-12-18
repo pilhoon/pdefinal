@@ -173,7 +173,7 @@ def get_cn_error():
     err = []
     for t in t_arr[1:]: #start from t_1 not t_0(init state)
         y = np.dot(cnmat, y) 
-        err_arr = np.vectorize(exact_solution)(t, x_coords)
+        err_arr = y - np.vectorize(exact_solution)(t, x_coords)
         err += [linalg.norm(err_arr)]
     return err
 
