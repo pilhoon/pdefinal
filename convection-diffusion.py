@@ -16,26 +16,23 @@ parser.add_argument('-c', type=float, default=1)
 parser.add_argument('-k', type=int, default=400, help='inverse of dt') 
 parser.add_argument('-h', type=int, default=20, help='inverse of dx') 
 parser.add_argument('--type', type=int, default=1) 
-parser.add_argument('--animate', action='store_true')  #if not show error
+parser.add_argument('--simulate', action='store_true')  #if not show error
 parser.add_argument('--interval', type=int , default=25)  #if not show error
 parser.add_argument('--show', action='store_true', help='show error graph')
 parser.add_argument('--tmax', type=int, default=10)
-parser.add_argument('--xmin', type=int, default=-10)
-parser.add_argument('--xmax', type=int, default=10)
-parser.add_argument('--ymin', type=int, default=-10)
-parser.add_argument('--ymax', type=int, default=10)
 parser.add_argument('--solution', action='store_true')
+parser.add_argument('--saveto', type=str)
 args = parser.parse_args()
 
-assert args.xmax > args.xmin 
-
-dx = 1.*(args.xmax - args.xmin)/args.h
-x_coords = np.linspace(args.xmin, args.xmax, args.h + 1)
+dx = 2./args.h # x: -1 ~ 1
+x_coords = np.linspace(-1, 1, args.h + 1)
 dt = 1.*args.tmax/args.k
 t_coords = np.linspace(0, args.tmax, args.k + 1)
 a = args.a
 b = args.b
 c = args.c
+assert a>0 and c>0
+
 # mu = dt / (dx*dx)
 # lmbda = dt / dx
 
@@ -43,11 +40,17 @@ print '---------------------'
 print ' a = ', a
 print ' b = ', b
 print ' c = ', c
+print ' c/b = ', c/b
+print ' a/b = ', a/b
+print 
+print ' t = 0 ~', args.tmax, '(len = ', len(t_coords), ')'
+print ' x = -1 ~ 1 (len = ', len(x_coords), ')'
 print ' dx = ', dx, '(h = ', args.h, ')'
 print ' dt = ', dt, '(k = ', args.k, ')'
-print ' t = 0 ~', args.tmax, '(len = ', len(t_coords), ')'
-print ' x = ', args.xmin, '~', args.xmax, '(len = ', len(x_coords), ')'
+print 
 print ' dx*c/2b = ', (dx*c)/(2*b)
+print ' dx*a/2b = ', (dx*a)/(2*b)
+print 
 
 def exact_solution(t, x, a, b, c): #x : array
     k = np.multiply(1.*c/(2*b), np.subtract(x, a*t))
@@ -103,14 +106,14 @@ def get_error(type=args.type):
 # exact solution view
 #
 
-if args.animate :
+if args.simulate :
     #
     # ftcs view
     #
     print ' interval = ', args.interval , ' ms'
     fig, ax = plt.subplots()
-    ax.set_xlim([args.xmin, args.xmax])
-    ax.set_ylim([args.ymin, args.ymax])
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([a-c, a+c])
     y = exact_solution(0, x_coords, a, b, c)
     line, = ax.plot(x_coords,y)
     ##plt.plot(x_coords, exact_solution(0.5, x_coords, 1,1,1))
@@ -122,12 +125,14 @@ if args.animate :
         line.set_ydata(y)
         return line
 
-    ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval , repeat=False)
+    line_ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval , repeat=False)
+    if args.saveto :
+        line_ani.save(args.saveto)
     plt.show()
 elif args.solution:
     fig, ax = plt.subplots()
-    ax.set_xlim([args.xmin, args.xmax])
-    ax.set_ylim([args.ymin, args.ymax])
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([a-c, a+c])
     y = exact_solution(0, x_coords, a, b, c)
     line, = ax.plot(x_coords,y)
     def update(t):
@@ -136,7 +141,9 @@ elif args.solution:
         line.set_ydata(exact_solution(t, x_coords, a, b, c))
         return line
         
-    ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval, repeat=False)
+    line_ani = ani.FuncAnimation(fig, update, t_coords, interval=args.interval, repeat=False)
+    if args.saveto :
+        line_ani.save(args.saveto)
     plt.show()
 else : #error view
     err = get_error()
