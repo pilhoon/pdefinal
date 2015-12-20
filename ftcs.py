@@ -11,6 +11,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dxinv', type=int, default=10)
+parser.add_argument('--mu', type=float, default=0.4)
 args = parser.parse_args()
 
 def sigma(limit, func):
@@ -24,10 +25,12 @@ def exact_solution(t, x) :
            sigma(sigma_to, lambda m: cos(2*pi*(2*m + 1)*x) / (pi**2*(2*m+1)**2 ) * exp(-4* pi**2 *(2*m+1)**2*t))
 
 def ftcs(v, mu):
-    vt = np.append(np.append(v[1],v), v[-2])
-    for i in range(1,len(vt)-1):
-        vt[i] = (1-2*mu)*vt[i] + mu*(vt[i-1] + vt[i+1])
-    return vt[1:-1]
+    #vector calculation
+    v_1 = np.append(v[1], v[0:-1]) # v+1
+    v1 = np.append(v[1:], v[-2])   # v-1
+    v_new = np.multiply(1-2*mu, v) + np.multiply(mu, v1 + v_1)
+    return v_new
+
 
 def exact_sol_view() :
     for t in np.arange(10.)/10:
@@ -44,10 +47,10 @@ def exact_sol_view() :
 #
 # initialize global variables.
 #
-
+print '------------'
 # u_t = u_xx , -1<x<1, 0<t<0.5
 #mu = 0.4 
-mu = 5
+mu = args.mu
 dx = 1./args.dxinv # 10 20 40 80 , dx = h
 #mu = 1/dx #if lmbda = 1
 x_num = int(2./dx)+1
@@ -56,6 +59,8 @@ dt = mu*dx*dx # dt = k
 lmda = dt/dx
 print 'lamda = ', lmda
 print 'mu = ', mu
+print 'dx = ', dx
+print 'dt = ', dt
 t_arr = np.linspace(0, 0.5, 0.5/dt + 1)
 
 sigma_to = 100 # used to calculate exact solution. ideally, inf.
@@ -78,7 +83,7 @@ y = inity()
 line = None
 
 def update_line(t): #ftcs
-    print '\r%.2f %%' % (100.*t/0.5),
+    print '\rt=%.2f' % t,
     sys.stdout.flush()
     global dt, mu, y, line
     #pdb.set_trace()
@@ -87,7 +92,6 @@ def update_line(t): #ftcs
     y = ftcs(y, mu) # u(t+dt, x)
     line.set_ydata(y)
 
-    #error
     return line,
 
 def show_ftcs_transformation():
@@ -116,6 +120,24 @@ def get_ftcs_error():
         y = ftcs(y, mu)
     return err
     
+def get_ftcs_final_error(): #at t = 0.5
+    global x_coords, t_arr, mu
+    err = []
+    y = inity()
+    for t in t_arr:
+        y[0] = exact_solution(t, -1) # v[0] : position x=-1
+        y[-1] = 0 # v[last_index] = {position x=1} 
+        y = ftcs(y, mu)
+    
+    err = y - np.vectorize(exact_solution)(0.5, x_coords)
+    print 
+    print 'sum=', sum(err)
+    print 'avg=', np.average(err)
+    print 'abs sum=', sum(abs(err))
+    print 'abs avg=', np.average(abs(err))
+
+    return err
+
 # Crank Nicolson
 cnmat = None
 cnline = None
@@ -172,13 +194,30 @@ def get_cn_error():
     cnmat = get_cn_mat(mu)
     err = []
     for t in t_arr[1:]: #start from t_1 not t_0(init state)
+        y[0] = exact_solution(t, -1)
+        y[-1] = 0
         y = np.dot(cnmat, y) 
         err_arr = y - np.vectorize(exact_solution)(t, x_coords)
         err += [linalg.norm(err_arr)]
     return err
 
+def get_cn_final_error():
+    global t_arr, x_coords, mu
+    y = inity()
+    cnmat = get_cn_mat(mu)
+    for t in t_arr[1:]: #start from t_1 not t_0(init state)
+        y[0] = exact_solution(t, -1) #bc u(t,-1)
+        y[-1] = 0 # u(t, 1)
+        y = np.dot(cnmat, y) 
 
-show_crank_nicolson()
+    err = y - np.vectorize(exact_solution)(0.5, x_coords) #t_arr[-1] = 0.5
+    print np.average(np.abs(err))
+    return err
+
+#get_ftcs_final_error()
+get_cn_final_error()
+
+#show_crank_nicolson()
 
 #print get_cn_error()
 #plt.plot(get_cn_error())
