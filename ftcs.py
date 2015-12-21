@@ -12,6 +12,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dxinv', type=int, default=10)
 parser.add_argument('--mu', type=float, default=0.4)
+parser.add_argument('--cn', action='store_true')
+parser.add_argument('--show', action='store_true')
 args = parser.parse_args()
 
 def sigma(limit, func):
@@ -214,8 +216,16 @@ def get_cn_final_error():
     print np.average(np.abs(err))
     return err
 
-#get_ftcs_final_error()
-get_cn_final_error()
+if args.cn:
+    if args.show:
+        show_crank_nicolson()
+    else:
+        get_cn_final_error()
+else:
+    if args.show:
+        show_ftcs_transformation()
+    else:
+        get_ftcs_final_error()
 
 #show_crank_nicolson()
 
