@@ -134,9 +134,8 @@ def get_ftcs_final_error(): #at t = 0.5
     err = y - np.vectorize(exact_solution)(0.5, x_coords)
     print 
     #print err
-    print 'abs sum=', sum(abs(err))
-    print 'abs avg=', np.average(abs(err))
     print 'norm:'
+    err = np.multiply(np.sqrt(1./args.dxinv), err)
     print linalg.norm(err)
 
     return err
@@ -214,8 +213,8 @@ def get_cn_final_error():
         y = np.dot(cnmat, y) 
 
     err = y - np.vectorize(exact_solution)(0.5, x_coords) #t_arr[-1] = 0.5
-    print np.average(np.abs(err))
     print 'norm:'
+    err = np.multiply(np.sqrt(1./args.dxinv), err)
     print linalg.norm(err)
     return err
 
